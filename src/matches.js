@@ -1,5 +1,5 @@
 import express from 'express';
-import { matchRouter } from './routes/matches.js';
+import { matchRouter } from './routes/matches';
 
 const app = express();
 const PORT = 8000;
@@ -12,8 +12,7 @@ app.get('/', (req, res) => {
     res.json({ message: "Hello! Welcome to the Sportbuzz server." });
 });
 
-// Matches routes - Using .use for router mounting
-app.use('/matches', matchRouter);
+app.get('/matches', (matchRouter))
 
 // Start the server
 app.listen(PORT, () => {
