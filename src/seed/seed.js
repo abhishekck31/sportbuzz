@@ -184,63 +184,63 @@ async function insertCommentary(matchId, entry) {
 
 // NOTE: Score delta logic is commented out because this codebase
 // does not expose score update endpoints.
-// function extractRuns(entry) {
-//   if (Number.isFinite(entry.runs)) {
-//     return entry.runs;
-//   }
-//   if (entry.metadata && Number.isFinite(entry.metadata.runs)) {
-//     return entry.metadata.runs;
-//   }
-//   if (entry.eventType === "four") {
-//     return 4;
-//   }
-//   if (entry.eventType === "six") {
-//     return 6;
-//   }
-//   if (entry.eventType === "run") {
-//     return 1;
-//   }
-//   return null;
-// }
-//
-// function scoreDeltaFromEntry(entry, match) {
-//   if (entry.scoreDelta && typeof entry.scoreDelta === "object") {
-//     return {
-//       home: Number(entry.scoreDelta.home || 0),
-//       away: Number(entry.scoreDelta.away || 0),
-//     };
-//   }
-//
-//   if (entry.eventType === "goal") {
-//     if (entry.team === match.homeTeam) {
-//       return { home: 1, away: 0 };
-//     }
-//     if (entry.team === match.awayTeam) {
-//       return { home: 0, away: 1 };
-//     }
-//   }
-//
-//   const runs = extractRuns(entry);
-//   if (runs !== null) {
-//     if (entry.team === match.homeTeam) {
-//       return { home: runs, away: 0 };
-//     }
-//     if (entry.team === match.awayTeam) {
-//       return { home: 0, away: runs };
-//     }
-//   }
-//
-//   return null;
-// }
-//
-// function fakeScoreDelta(matchState) {
-//   const nextSide = matchState.fakeNext === "home" ? "away" : "home";
-//   matchState.fakeNext = nextSide;
-//   const points = 1;
-//   return nextSide === "home"
-//     ? { home: points, away: 0 }
-//     : { home: 0, away: points };
-// }
+function scoreDeltaFromEntry(entry, match) {
+    if (entry.scoreDelta && typeof entry.scoreDelta === "object") {
+        return {
+            home: Number(entry.scoreDelta.home || 0),
+            away: Number(entry.scoreDelta.away || 0),
+        };
+    }
+
+    if (entry.eventType === "goal") {
+        if (entry.team === match.homeTeam) {
+            return { home: 1, away: 0 };
+        }
+        if (entry.team === match.awayTeam) {
+            return { home: 0, away: 1 };
+        }
+    }
+
+    const runs = extractRuns(entry);
+    if (runs !== null) {
+        if (entry.team === match.homeTeam) {
+            return { home: runs, away: 0 };
+        }
+        if (entry.team === match.awayTeam) {
+            return { home: 0, away: runs };
+        }
+    }
+
+    return null;
+}
+
+function fakeScoreDelta(matchState) {
+    const nextSide = matchState.fakeNext === "home" ? "away" : "home";
+    matchState.fakeNext = nextSide;
+    const points = 1;
+    return nextSide === "home"
+        ? { home: points, away: 0 }
+        : { home: 0, away: points };
+}
+
+function extractRuns(entry) {
+    if (Number.isFinite(entry.runs)) {
+        return entry.runs;
+    }
+    if (entry.metadata && Number.isFinite(entry.metadata.runs)) {
+        return entry.metadata.runs;
+    }
+    if (entry.eventType === "four") {
+        return 4;
+    }
+    if (entry.eventType === "six") {
+        return 6;
+    }
+    if (entry.eventType === "run") {
+        return 1;
+    }
+    return null;
+}
 
 function inningsRank(period) {
     if (!period) {
@@ -277,28 +277,28 @@ function cricketBattingTeam(entry, match) {
     return null;
 }
 
-// function cricketScoreDelta(entry, match) {
-//   const battingTeam = cricketBattingTeam(entry, match);
-//   let delta = scoreDeltaFromEntry(entry, match);
-//   if (!delta) {
-//     if (!battingTeam) {
-//       return null;
-//     }
-//     const points = 1;
-//     return battingTeam === match.homeTeam
-//       ? { home: points, away: 0 }
-//       : { home: 0, away: points };
-//   }
-//
-//   if (!battingTeam) {
-//     return delta;
-//   }
-//
-//   if (battingTeam === match.homeTeam) {
-//     return { home: delta.home, away: 0 };
-//   }
-//   return { home: 0, away: delta.away };
-// }
+function cricketScoreDelta(entry, match) {
+    const battingTeam = cricketBattingTeam(entry, match);
+    let delta = scoreDeltaFromEntry(entry, match);
+    if (!delta) {
+        if (!battingTeam) {
+            return null;
+        }
+        const points = 1;
+        return battingTeam === match.homeTeam
+            ? { home: points, away: 0 }
+            : { home: 0, away: points };
+    }
+
+    if (!battingTeam) {
+        return delta;
+    }
+
+    if (battingTeam === match.homeTeam) {
+        return { home: delta.home, away: 0 };
+    }
+    return { home: 0, away: delta.away };
+}
 
 function normalizeCricketFeed(entries, match) {
     const sorted = [...entries].sort((a, b) => {
@@ -497,16 +497,23 @@ function getMatchEntry(entry, matchMap) {
 }
 
 // NOTE: Score updates are not part of this codebase yet.
-// async function updateMatchScore(matchId, homeScore, awayScore) {
-//   const response = await fetch(`${API_URL}/matches/${matchId}/score`, {
-//     method: "PATCH",
-//     headers: { "content-type": "application/json" },
-//     body: JSON.stringify({ homeScore, awayScore }),
-//   });
-//   if (!response.ok) {
-//     throw new Error(`Failed to update score: ${response.status}`);
-//   }
-// }
+async function updateMatchScore(matchId, homeScore, awayScore, metadata = null) {
+    const payload = { homeScore, awayScore };
+    if (metadata) {
+        payload.metadata = metadata;
+    }
+    console.log(`📡 Updating match ${matchId} score...`);
+    const response = await fetch(`${API_URL}/matches/${matchId}/score`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+        const errBody = await response.text();
+        console.error(`❌ Score update failed: ${response.status} - ${errBody}`);
+        throw new Error(`Failed to update score: ${response.status}`);
+    }
+}
 
 function randomMatchDelay() {
     const range = NEW_MATCH_DELAY_MAX_MS - NEW_MATCH_DELAY_MIN_MS;
@@ -544,6 +551,7 @@ async function seed() {
             match,
             score: { home: match.homeScore ?? 0, away: match.awayScore ?? 0 },
             fakeNext: Math.random() < 0.5 ? "home" : "away",
+            cricket: String(match.sport).toLowerCase() === "cricket" ? { wickets: 0, overs: 0, balls: 0 } : null,
         });
     }
 
@@ -562,12 +570,14 @@ async function seed() {
                     match,
                     score: { home: match.homeScore ?? 0, away: match.awayScore ?? 0 },
                     fakeNext: Math.random() < 0.5 ? "home" : "away",
+                    cricket: String(match.sport).toLowerCase() === "cricket" ? { wickets: 0, overs: 0, balls: 0 } : null,
                 });
             }
             matchMap.set(match.id, {
                 match,
                 score: { home: match.homeScore ?? 0, away: match.awayScore ?? 0 },
                 fakeNext: Math.random() < 0.5 ? "home" : "away",
+                cricket: String(match.sport).toLowerCase() === "cricket" ? { wickets: 0, overs: 0, balls: 0 } : null,
             });
         }
     }
@@ -619,18 +629,56 @@ async function seed() {
         console.log(`📣 [Match ${match.id}] ${row.message}`);
 
         // NOTE: Score updates are intentionally disabled in this codebase.
-        // const isCricket = String(match.sport).toLowerCase() === "cricket";
-        // const delta = isCricket
-        //   ? cricketScoreDelta(entry, match, target)
-        //   : (scoreDeltaFromEntry(entry, match) ?? fakeScoreDelta(target));
-        // if (delta) {
-        //   target.score.home += delta.home;
-        //   target.score.away += delta.away;
-        //   await updateMatchScore(match.id, target.score.home, target.score.away);
-        //   console.log(
-        //     `📊 [Match ${match.id}] Score updated: ${target.score.home}-${target.score.away}`,
-        //   );
-        // }
+        try {
+            const isCricket = String(match.sport).toLowerCase() === "cricket";
+            const delta = isCricket
+                ? cricketScoreDelta(entry, match, target)
+                : (scoreDeltaFromEntry(entry, match) ?? fakeScoreDelta(target));
+
+            if (isCricket && target.cricket) {
+                // Track balls/overs
+                if (entry.eventType === 'wicket') {
+                    target.cricket.wickets += 1;
+                }
+                if (entry.eventType === 'run' || entry.eventType === 'four' || entry.eventType === 'six' || entry.eventType === 'wicket') {
+                    target.cricket.balls += 1;
+                    if (target.cricket.balls >= 6) {
+                        target.cricket.overs += 1;
+                        target.cricket.balls = 0;
+                    }
+                }
+            }
+
+            if (delta) {
+                target.score.home += delta.home;
+                target.score.away += delta.away;
+
+                let metadata = null;
+                if (isCricket && target.cricket) {
+                    const battingTeam = cricketBattingTeam(entry, match);
+                    metadata = {
+                        wickets: target.cricket.wickets,
+                        overs: target.cricket.overs,
+                        balls: target.cricket.balls,
+                        battingTeam: battingTeam,
+                    };
+                    console.log(`🏏 [Match ${match.id}] Cricket Metadata:`, JSON.stringify(metadata));
+                }
+
+                await updateMatchScore(
+                    match.id,
+                    target.score.home,
+                    target.score.away,
+                    metadata,
+                );
+                console.log(
+                    `📊 [Match ${match.id}] Score updated: ${target.score.home}-${target.score.away} ${isCricket ? `(${target.cricket.overs}.${target.cricket.balls} ov, ${target.cricket.wickets} wkt)` : ""}`,
+                );
+            }
+        } catch (err) {
+            console.error(`❌ Error updating match ${match.id}:`, err);
+            // continue seeding other matches
+        }
 
         // NOTE: Match status updates are intentionally disabled in this codebase.
         // if (Number.isInteger(entry.matchId)) {
