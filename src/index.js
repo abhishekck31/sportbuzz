@@ -3,6 +3,7 @@ AgentAPI.config();
 
 import express from 'express';
 import http from 'http';
+import cors from 'cors';
 import { matchRouter } from "./routes/matches.js";
 import { attachWebSocketServer } from "./ws/server.js";
 import { securityMiddleware } from "./arcjet.js";
@@ -14,6 +15,7 @@ const HOST = process.env.HOST || '0.0.0.0';
 const app = express();
 const server = http.createServer(app);
 
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -30,9 +32,13 @@ app.locals.broadcastMatchCreated = broadcastMatchCreated;
 app.locals.broadcastCommentary = broadcastCommentary;
 app.locals.broadcastScoreUpdate = broadcastScoreUpdate;
 
-server.listen(PORT, HOST, () => {
-  const baseUrl = HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  server.listen(PORT, HOST, () => {
+    const baseUrl = HOST === '0.0.0.0' ? `http://localhost:${PORT}` : `http://${HOST}:${PORT}`;
 
-  console.log(`Server is running on ${baseUrl}`);
-  console.log(`WebSocket Server is running on ${baseUrl.replace('http', 'ws')}/ws`);
-});
+    console.log(`Server is running on ${baseUrl}`);
+    console.log(`WebSocket Server is running on ${baseUrl.replace('http', 'ws')}/ws`);
+  });
+}
+
+export default app;
