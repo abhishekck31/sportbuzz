@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sportz | Live Real-Time Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --secondary: #4facfe;
+            --bg: #0b0e14;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --muted: #a0aec0;
+            --success: #00f5d4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 2rem;
+            background-image: radial-gradient(circle at 50% 0%, #1a202c 0%, var(--bg) 100%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            border: 1px solid var(--border);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-color: transparent;
+            color: var(--bg);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 2rem;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Match Cards */
+        .match-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .match-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0, 242, 254, 0.1);
+        }
+
+        .match-header {
+            display: flex;
+            justify-content: space-between;
+            color: var(--muted);
+            margin-bottom: 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .live-tag {
+            color: #ff4d4d;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .team-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .score {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            transition: all 0.3s;
+        }
+
+        .score.updated {
+            transform: scale(1.2);
+            color: var(--success);
+        }
+
+        .vs {
+            color: var(--muted);
+            font-size: 0.875rem;
+            padding: 0 2rem;
+            font-weight: 700;
+        }
+
+        /* Commentary Feed */
+        .sidebar {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.5rem;
+            height: calc(100vh - 12rem);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #commentary-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .commentary-item {
+            padding: 1rem;
+            border-left: 3px solid var(--primary);
+            background: rgba(255, 255, 255, 0.02);
+            margin-bottom: 1rem;
+            border-radius: 0 10px 10px 0;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .commentary-time {
+            font-size: 0.75rem;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .commentary-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem;
+            color: var(--muted);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .cricket-stats {
+            margin-top: 1rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--secondary);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .football-stats {
+            margin-top: 1rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--secondary);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .match-time {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .match-event {
+            margin-top: 0.5rem;
+            color: #10b981;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .stats-container {
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" fill="url(#paint0_linear)" stroke="url(#paint0_linear)"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <defs>
+                        <linearGradient id="paint0_linear" x1="3" y1="2" x2="21" y2="22" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#00f2fe" />
+                            <stop offset="1" stop-color="#4facfe" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                SPORTZ
+            </div>
+            <div class="status-badge" id="ws-status">
+                <div class="status-dot" style="background: #a0aec0; box-shadow: none;"></div>
+                CONNECTING ENGINE...
+            </div>
+        </header>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterSport('all')">All Sports</button>
+            <button class="filter-btn" onclick="filterSport('football')">Football</button>
+            <button class="filter-btn" onclick="filterSport('cricket')">Cricket</button>
+            <button class="filter-btn" onclick="filterSport('basketball')">Basketball</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <main id="matches-container">
+                <div class="empty-state">
+                    Fetching the latest matches...
+                </div>
+            </main>
+
+            <aside class="sidebar">
+                <div class="sidebar-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Live Commentary
+                </div>
+                <div id="commentary-list">
+                    <!-- Events will appear here -->
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const WS_URL = window.location.origin.replace('http', 'ws') + '/ws';
+        let socket;
+        let matches = [];
+        let currentFilter = 'all';
+
+        function connectWS() {
+            socket = new WebSocket(WS_URL);
+            socket.onopen = () => {
+                document.getElementById('ws-status').innerHTML = '<div class="status-dot"></div> ENGINE LIVE';
+            };
+            socket.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                handleWSMessage(message);
+            };
+            socket.onclose = () => {
+                document.getElementById('ws-status').innerHTML = '<div class="status-dot" style="background: #ff4d4d; box-shadow: none;"></div> ENGINE OFFLINE';
+                setTimeout(connectWS, 3000);
+            };
+        }
+
+        function handleWSMessage(message) {
+            if (message.type === 'score_update') {
+                updateMatchScore(message.matchId, message.data);
+            } else if (message.type === 'commentary') {
+                addCommentary(message.data);
+            } else if (message.type === 'match_created') {
+                fetchMatches();
+            }
+        }
+
+        async function fetchMatches() {
+            try {
+                const res = await fetch(`${API_URL}/matches?limit=50`);
+                const result = await res.json();
+                matches = result.data;
+                renderMatches();
+            } catch (err) {
+                console.error('Fetch error:', err);
+            }
+        }
+
+        function filterSport(sport) {
+            currentFilter = sport;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === sport || (sport === 'all' && btn.innerText === 'All Sports'));
+            });
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const container = document.getElementById('matches-container');
+            const filtered = currentFilter === 'all' ? matches : matches.filter(m => m.sport.toLowerCase() === currentFilter);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="empty-state">No ${currentFilter === 'all' ? '' : currentFilter} matches found.</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(match => {
+                const sport = match.sport.toLowerCase();
+                const meta = match.metadata || {};
+                let extraInfo = '';
+
+                if (sport === 'cricket' && meta.overs !== undefined) {
+                    extraInfo = `<div class="cricket-stats">${meta.overs}.${meta.balls} ov | ${meta.wickets} wkt</div>`;
+                } else if (sport === 'football') {
+                    const timeInfo = meta.event_time ? `<span class="match-time">${meta.event_time}'</span>` : '';
+                    const latestGoal = meta.goalscorers?.length > 0 ? meta.goalscorers[meta.goalscorers.length - 1] : null;
+                    const goalInfo = latestGoal ? `<div class="match-event">⚽ ${latestGoal.home_scorer || latestGoal.away_scorer} (${latestGoal.time}')</div>` : '';
+                    extraInfo = `<div class="football-stats">${timeInfo} ${meta.league_name || ''}</div>${goalInfo}`;
+                }
+
+                return `
+                    <div class="match-card" id="match-${match.id}">
+                        <div class="match-header">
+                            <span>${match.sport}</span>
+                            ${match.status === 'live' ? '<span class="live-tag"><div class="status-dot"></div> LIVE</span>' : `<span>${match.status}</span>`}
+                        </div>
+                        <div class="scoreboard">
+                            <div class="team">
+                                <div class="team-name">${match.homeTeam}</div>
+                                <div class="score" id="score-home-${match.id}">${match.homeScore}</div>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="team">
+                                <div class="team-name">${match.awayTeam}</div>
+                                <div class="score" id="score-away-${match.id}">${match.awayScore}</div>
+                            </div>
+                        </div>
+                        <div class="stats-container">
+                            ${extraInfo}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateMatchScore(matchId, data) {
+            // Update the local data so it persists filtering
+            const match = matches.find(m => m.id === matchId);
+            if (match) {
+                match.homeScore = data.homeScore;
+                match.awayScore = data.awayScore;
+                match.metadata = data.metadata;
+            }
+
+            const homeScoreEl = document.getElementById(`score-home-${matchId}`);
+            const awayScoreEl = document.getElementById(`score-away-${matchId}`);
+
+            if (homeScoreEl) {
+                homeScoreEl.innerText = data.homeScore;
+                homeScoreEl.classList.add('updated');
+                setTimeout(() => homeScoreEl.classList.remove('updated'), 1000);
+            }
+            if (awayScoreEl) {
+                awayScoreEl.innerText = data.awayScore;
+                awayScoreEl.classList.add('updated');
+                setTimeout(() => awayScoreEl.classList.remove('updated'), 1000);
+            }
+
+            // Update cricket stats if present
+            const card = document.getElementById(`match-${matchId}`);
+            if (card) {
+                if (match && match.sport.toLowerCase() === 'cricket' && data.metadata) {
+                    let statsEl = card.querySelector('.cricket-stats');
+                    if (!statsEl) {
+                        statsEl = document.createElement('div');
+                        statsEl.className = 'cricket-stats';
+                        card.appendChild(statsEl);
+                    }
+                    statsEl.innerText = `${data.metadata.overs}.${data.metadata.balls} ov | ${data.metadata.wickets} wkt`;
+                }
+
+                card.style.borderColor = 'var(--primary)';
+                setTimeout(() => card.style.borderColor = 'var(--border)', 1000);
+            }
+        }
+
+        function addCommentary(comment) {
+            const list = document.getElementById('commentary-list');
+            const item = document.createElement('div');
+            item.className = 'commentary-item';
+            item.innerHTML = `
+                <div class="commentary-time">${comment.minute}' - ${comment.period || ''}</div>
+                <div class="commentary-text"><strong>${comment.actor || ''}</strong> ${comment.message}</div>
+            `;
+            list.prepend(item);
+        }
+
+        connectWS();
+        fetchMatches();
+    </script>
+</body>
+
+</html>

@@ -1,8 +1,8 @@
 {
-  "name": "sportz",
+  "name": "sportz-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "High-performance real-time sports broadcasting backend with WebSockets, security shielding, and automated data seeding.",
+  "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
@@ -10,16 +10,27 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "demo": "node src/crud-demo.js",
-    "seed": "node src/seed/seed.js"
+    "seed": "node src/seed/seed.js",
+    "test": "node --test tests/"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "node.js",
+    "express",
+    "websockets",
+    "arcjet",
+    "postgresql",
+    "drizzle-orm",
+    "zod",
+    "real-time"
+  ],
+  "author": "Abhishek",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@arcjet/inspect": "^1.0.0-beta.17",
     "@arcjet/node": "^1.0.0-beta.17",
     "apminsight": "^5.2.1",
+    "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.1",
     "express": "^5.2.1",

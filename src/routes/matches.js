@@ -61,67 +61,51 @@ matchRouter.post('/', async (req, res) => {
 })
 
 matchRouter.patch('/:id/score', async (req, res) => {
-    const paramsParsed = matchIdParamSchema.safeParse(req.params);
-    if (!paramsParsed.success) {
-        return res
-            .status(400)
-            .json({ error: 'Invalid match id', details: paramsParsed.error.issues });
-    }
-
-    const bodyParsed = updateScoreSchema.safeParse(req.body);
-    if (!bodyParsed.success) {
-        return res
-            .status(400)
-            .json({ error: 'Invalid payload', details: bodyParsed.error.issues });
-    }
-
-    const matchId = paramsParsed.data.id;
-
     try {
-        const [existing] = await db
-            .select({
-                id: matches.id,
-                status: matches.status,
-                startTime: matches.startTime,
-                endTime: matches.endTime,
-            })
-            .from(matches)
-            .where(eq(matches.id, matchId))
-            .limit(1);
+        if (!updateScoreSchema) {
+            return res.status(500).json({ error: 'Schema missing' });
+        }
+        const matchId = Number.parseInt(req.params.id, 10);
+        const bodyParsed = updateScoreSchema.safeParse(req.body);
 
-        if (!existing) {
-            return res.status(404).json({ error: 'Match not found' });
+        if (!bodyParsed.success) {
+            return res.status(400).json({ error: 'Invalid score data.' });
         }
 
-        await syncMatchStatus(existing, async (nextStatus) => {
-            await db
-                .update(matches)
-                .set({ status: nextStatus })
-                .where(eq(matches.id, matchId));
-        });
-
-        if (existing.status !== MATCH_STATUS.LIVE) {
-            return res.status(409).json({ error: 'Match is not live' });
-        }
+        const homeScore = bodyParsed.data.homeScore;
+        const awayScore = bodyParsed.data.awayScore;
+        const metadata = bodyParsed.data.metadata ?? null;
 
         const [updated] = await db
             .update(matches)
             .set({
-                homeScore: bodyParsed.data.homeScore,
-                awayScore: bodyParsed.data.awayScore,
+                homeScore,
+                awayScore,
+                metadata,
             })
             .where(eq(matches.id, matchId))
             .returning();
 
-        if (res.app.locals.broadcastScoreUpdate) {
-            res.app.locals.broadcastScoreUpdate(matchId, {
+        if (!updated) {
+            return res.status(404).json({ error: 'Match not found.' });
+        }
+
+        const broadcast = req.app.locals.broadcastScoreUpdate;
+        if (broadcast) {
+            broadcast(matchId, {
                 homeScore: updated.homeScore,
                 awayScore: updated.awayScore,
+                metadata: updated.metadata,
             });
         }
 
-        res.json({ data: updated });
+        return res.json({ data: updated });
     } catch (err) {
-        res.status(500).json({ error: 'Failed to update score' });
+        console.error('Error in PATCH /matches/:id/score:', err);
+        return res.status(500).json({
+            error: 'Failed to update score',
+            message: err?.message || String(err),
+            stack: err?.stack
+        });
     }
 });

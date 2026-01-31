@@ -91,6 +91,11 @@ export function attachWebSocketServer(server) {
 
         if (wsArcjet) {
             try {
+                // DetectBot requires a User-Agent header
+                if (!req.headers['user-agent']) {
+                    req.headers['user-agent'] = 'unknown';
+                }
+
                 const decision = await wsArcjet.protect(req);
 
                 if (decision.isDenied()) {

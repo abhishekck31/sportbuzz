@@ -12,6 +12,7 @@ export const matches = pgTable('matches', {
   endTime: timestamp('end_time'),
   homeScore: integer('home_score').notNull().default(0),
   awayScore: integer('away_score').notNull().default(0),
+  metadata: jsonb('metadata'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

@@ -1,7 +1,7 @@
 import arcjet, { detectBot, shield, slidingWindow } from "@arcjet/node";
 
 const arcjetKey = process.env.ARCJET_KEY;
-const arcjetMode = process.env.ARCJECT_MODE === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE';
+const arcjetMode = process.env.ARCJET_MODE === 'DRY_RUN' ? 'DRY_RUN' : 'LIVE';
 
 if (!arcjetKey) {
     console.warn('ARCJET_KEY environment variable is missing. Arcjet security features will be disabled.');
@@ -30,6 +30,12 @@ export const wsArcjet = arcjetKey ?
 export function securityMiddleware() {
     return async (req, res, next) => {
         if (!httpArcjet) return next();
+
+        // DetectBot requires a User-Agent header. If it's missing, we provide a fallback
+        // to avoid Arcjet throwing an internal error.
+        if (!req.headers['user-agent']) {
+            req.headers['user-agent'] = 'unknown';
+        }
 
         try {
             const decision = await httpArcjet.protect(req);
